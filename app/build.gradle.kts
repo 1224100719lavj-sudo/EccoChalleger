@@ -1,8 +1,14 @@
 plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-    id("com.google.devtools.ksp") version "1.9.0-1.0.13"
-    // Comenta esta línea si aún no tienes google-services.json
+    // Usamos 'alias' para leer las versiones correctas desde libs.versions.toml
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+
+    // ✅ ESTA ES LA SOLUCIÓN AL ERROR: El plugin compilador de Compose
+    alias(libs.plugins.kotlin.compose)
+
+    // ✅ ACTUALIZACIÓN KSP: Debe coincidir con Kotlin 2.0.21
+    id("com.google.devtools.ksp") version "2.0.21-1.0.27"
+
     id("com.google.gms.google-services")
 }
 
@@ -39,6 +45,7 @@ android {
     buildFeatures {
         compose = true
     }
+    // Nota: Ya no necesitas el bloque 'composeOptions' en Kotlin 2.0, por eso no está aquí.
 }
 
 dependencies {
@@ -74,7 +81,10 @@ dependencies {
     ksp("androidx.room:room-compiler:$roomVersion")
 
     // Firebase BOM
-    implementation(platform("com.google.firebase:firebase-bom:34.6.0"))
+    // Versión estable recomendada
+    implementation(platform("com.google.firebase:firebase-bom:33.6.0"))
+
+    // Librerías de Firebase (Sin versiones, el BOM las controla)
     implementation("com.google.firebase:firebase-firestore-ktx")
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-storage-ktx")
@@ -89,5 +99,4 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
-
 }
