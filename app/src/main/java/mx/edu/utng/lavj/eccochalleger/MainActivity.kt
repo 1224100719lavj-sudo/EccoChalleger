@@ -8,24 +8,26 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
 import mx.edu.utng.lavj.eccochalleger.data.local.AppDatabase
-import mx.edu.utng.lavj.eccochalleger.data.repository.*
 import mx.edu.utng.lavj.eccochalleger.navigation.AppNavigation
 import mx.edu.utng.lavj.eccochalleger.ui.theme.EccoChallegerTheme
 import mx.edu.utng.lavj.eccochalleger.ui.viewmodel.*
+import mx.edu.utng.lavj.eccochalleger.data.repository.*
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 
 class MainActivity : ComponentActivity() {
 
     private lateinit var database: AppDatabase
     private lateinit var auth: FirebaseAuth
     private lateinit var firestore: FirebaseFirestore
+    private lateinit var storage: FirebaseStorage
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,6 +36,7 @@ class MainActivity : ComponentActivity() {
         FirebaseApp.initializeApp(this)
         auth = FirebaseAuth.getInstance()
         firestore = FirebaseFirestore.getInstance()
+        storage = FirebaseStorage.getInstance()
 
         // Inicializar Room Database
         database = AppDatabase.getDatabase(applicationContext)
@@ -47,23 +50,29 @@ class MainActivity : ComponentActivity() {
                 ) {
                     val navController = rememberNavController()
 
-                    // Repositorios
+                    // Crear repositorios
                     val authRepository = AuthRepository(auth, firestore, database.usuarioDao())
                     val retoRepository = RetoRepository(
                         database.retoDao(),
                         database.usuarioDao(),
-                        firestore
+                        firestore,
                     )
                     val rankingRepository = RankingRepository(database.rankingDao(), firestore)
                     val consejoRepository = ConsejoRepository(database.consejoDao())
                     val logroRepository = LogroRepository(database.logroDao())
+                    val adminRepository = AdminRepository(
+                        database.retoDao(),
+                        database.retoCompletadoDao(),
+                        firestore,
+                        storage
+                    )
 
-                    // ViewModels
+                    // Crear ViewModels
                     val authViewModel = viewModel<AuthViewModel>(
                         factory = AuthViewModelFactory(authRepository)
                     )
                     val retosViewModel = viewModel<RetosViewModel>(
-                        factory = RetosViewModelFactory(retoRepository)
+                        factory = RetosViewModelFactory(retoRepository, adminRepository)
                     )
                     val rankingViewModel = viewModel<RankingViewModel>(
                         factory = RankingViewModelFactory(rankingRepository)
@@ -74,6 +83,9 @@ class MainActivity : ComponentActivity() {
                     val perfilViewModel = viewModel<PerfilViewModel>(
                         factory = PerfilViewModelFactory(authRepository, logroRepository)
                     )
+                    val adminViewModel = viewModel<AdminViewModel>(
+                        factory = AdminViewModelFactory(adminRepository)
+                    )
 
                     // Navegación
                     AppNavigation(
@@ -82,7 +94,8 @@ class MainActivity : ComponentActivity() {
                         retosViewModel = retosViewModel,
                         rankingViewModel = rankingViewModel,
                         consejosViewModel = consejosViewModel,
-                        perfilViewModel = perfilViewModel
+                        perfilViewModel = perfilViewModel,
+                        adminViewModel = adminViewModel
                     )
                 }
             }
@@ -90,9 +103,8 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-// -------------------------------
-// ViewModel Factories
-// -------------------------------
+// ViewModelFactories
+
 
 class AuthViewModelFactory(
     private val authRepository: AuthRepository
@@ -107,12 +119,25 @@ class AuthViewModelFactory(
 }
 
 class RetosViewModelFactory(
-    private val retoRepository: RetoRepository
+    private val retoRepository: RetoRepository,
+    private val adminRepository: AdminRepository
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(RetosViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return RetosViewModel(retoRepository) as T
+            return RetosViewModel(retoRepository, adminRepository) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
+    }
+}
+
+class AdminViewModelFactory(
+    private val adminRepository: AdminRepository
+) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(AdminViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return AdminViewModel(adminRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

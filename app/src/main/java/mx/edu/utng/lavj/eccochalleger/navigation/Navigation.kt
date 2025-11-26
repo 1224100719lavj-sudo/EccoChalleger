@@ -7,6 +7,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import mx.edu.utng.lavj.eccochalleger.ui.screens.*
+import mx.edu.utng.lavj.eccochalleger.ui.screens.admin.*
 import mx.edu.utng.lavj.eccochalleger.ui.viewmodel.*
 
 sealed class Screen(val route: String) {
@@ -21,6 +22,9 @@ sealed class Screen(val route: String) {
     object Perfil : Screen("perfil")
     object Premium : Screen("premium")
     object MapaVerde : Screen("mapa_verde")
+    object AdminDashboard : Screen("admin_dashboard")
+    object AdminCrearReto : Screen("admin_crear_reto")
+    object AdminRevisarRetos : Screen("admin_revisar_retos")
 }
 
 @Composable
@@ -30,7 +34,8 @@ fun AppNavigation(
     retosViewModel: RetosViewModel,
     rankingViewModel: RankingViewModel,
     consejosViewModel: ConsejosViewModel,
-    perfilViewModel: PerfilViewModel
+    perfilViewModel: PerfilViewModel,
+    adminViewModel: AdminViewModel
 ) {
     val usuario by authViewModel.usuarioActual.collectAsState()
 
@@ -135,6 +140,9 @@ fun AppNavigation(
                 onNavigateToPremium = {
                     navController.navigate(Screen.Premium.route)
                 },
+                onNavigateToAdminPanel = {
+                    navController.navigate(Screen.AdminDashboard.route)
+                },
                 onLogout = {
                     authViewModel.logout()
                     navController.navigate(Screen.Welcome.route) {
@@ -156,6 +164,36 @@ fun AppNavigation(
             MapaVerdeScreen(
                 onAgregarLugarClick = { /* TODO */ },
                 onVerDetallesClick = { /* TODO */ },
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // PANTALLAS DE ADMIN
+        composable(Screen.AdminDashboard.route) {
+            AdminDashboardScreen(
+                adminViewModel = adminViewModel,
+                authViewModel = authViewModel,
+                onNavigateToCrearReto = {
+                    navController.navigate(Screen.AdminCrearReto.route)
+                },
+                onNavigateToRevisarRetos = {
+                    navController.navigate(Screen.AdminRevisarRetos.route)
+                },
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.AdminCrearReto.route) {
+            CrearRetoScreen(
+                adminViewModel = adminViewModel,
+                authViewModel = authViewModel,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.AdminRevisarRetos.route) {
+            RevisarRetosScreen(
+                adminViewModel = adminViewModel,
                 onNavigateBack = { navController.popBackStack() }
             )
         }

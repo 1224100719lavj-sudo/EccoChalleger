@@ -5,6 +5,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AdminPanelSettings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,6 +27,7 @@ fun UsuarioScreen(
     viewModel: PerfilViewModel,
     onNavigateBack: () -> Unit,
     onNavigateToPremium: () -> Unit,
+    onNavigateToAdminPanel: () -> Unit,
     onLogout: () -> Unit
 ) {
     val usuario by viewModel.usuario.collectAsState()
@@ -154,6 +157,28 @@ fun UsuarioScreen(
             }
 
             Spacer(modifier = Modifier.weight(1f))
+
+            // Botón Panel de Admin (solo si es admin)
+            if (usuario?.esAdmin == true) {
+                Button(
+                    onClick = onNavigateToAdminPanel,
+                    shape = RoundedCornerShape(24.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF6F00)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp)
+                ) {
+                    Icon(Icons.Default.AdminPanelSettings, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = "Panel de Administrador",
+                        color = Color.White,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 16.sp
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+            }
 
             // Botón Premium
             Button(

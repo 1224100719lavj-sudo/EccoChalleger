@@ -13,5 +13,10 @@ data class RetoEntity(
     val puntos: Int = 10,
     val completado: Boolean = false,
     val fecha: Long = System.currentTimeMillis(),
-    val iconoNombre: String = "Recycling" // Nombre del icono
+    val iconoNombre: String = "Recycling", // Nombre del icono
+    val requiereFoto: Boolean,
+    val fechaCompletado: Long? = null,
+    val fotoValidacionUrl: String? = null
 )
+
+

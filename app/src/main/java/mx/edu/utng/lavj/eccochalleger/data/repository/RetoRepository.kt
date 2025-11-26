@@ -6,8 +6,13 @@ import kotlinx.coroutines.tasks.await
 import mx.edu.utng.lavj.eccochalleger.data.local.dao.RetoDao
 import mx.edu.utng.lavj.eccochalleger.data.local.dao.UsuarioDao
 import mx.edu.utng.lavj.eccochalleger.data.local.entities.RetoEntity
+// Asumiendo que esta es tu entidad para retos completados
+import mx.edu.utng.lavj.eccochalleger.data.local.entities.RetoCompletadoEntity
 import mx.edu.utng.lavj.eccochalleger.data.remote.models.RetoGlobalFirebase
 import mx.edu.utng.lavj.eccochalleger.utils.Resource
+import java.util.Date // <-- PASO 1: IMPORTAR LA CLASE DATE
+import java.util.UUID // <-- PASO 2: IMPORTAR LA CLASE UUID
+
 
 class RetoRepository(
     private val retoDao: RetoDao,
@@ -15,6 +20,7 @@ class RetoRepository(
     private val firestore: FirebaseFirestore
 ) {
 
+    // ... (otras funciones sin cambios) ...
     fun getRetosActivos(): Flow<List<RetoEntity>> {
         return retoDao.getRetosActivos()
     }
@@ -38,9 +44,9 @@ class RetoRepository(
                     descripcion = reto.descripcion,
                     tipo = reto.tipo,
                     puntos = reto.puntos,
-                    completado = false,
                     fecha = reto.fecha,
-                    iconoNombre = reto.iconoNombre
+                    iconoNombre = reto.iconoNombre,
+                    requiereFoto = reto.requiereFoto
                 )
             }
 
@@ -51,23 +57,62 @@ class RetoRepository(
         }
     }
 
-    suspend fun marcarRetoCompletado(retoId: String, usuarioId: String): Resource<Unit> {
+
+    suspend fun marcarRetoCompletado(
+        retoId: String,
+        usuarioId: String,
+        fotoUrl: String
+    ): Resource<Unit> {
         return try {
             val reto = retoDao.getRetoById(retoId) ?: return Resource.Error("Reto no encontrado")
 
-            // Marcar completado localmente
+            // Generamos el ID único aquí para usarlo en ambos lados (Local y Nube)
+            val nuevoId = UUID.randomUUID().toString()
+            val tiempoActual = Date().time
+
+            // 1. Guardar en Base de Datos Local (Room)
+            val retoCompletadoEntity = RetoCompletadoEntity(
+                id = nuevoId,
+                retoId = retoId,
+                usuarioId = usuarioId,
+                usuarioNombre = "Usuario", // Idealmente obtener nombre real
+                fotoUrl = fotoUrl,
+                estado = "pendiente",
+                fechaCompletado = tiempoActual,
+                puntosOtorgados = reto.puntos
+            )
+            retoDao.insertRetoCompletado(retoCompletadoEntity)
             retoDao.marcarCompletado(retoId, true)
 
-            // Agregar puntos al usuario
-            usuarioDao.agregarPuntos(usuarioId, reto.puntos)
-
-            // Actualizar puntos en Firebase
+            // 2. ACTUALIZACIÓN DE PUNTOS (Lo que ya tenías)
             val userDoc = firestore.collection("usuarios").document(usuarioId)
+
+            // 3. ✅ LO NUEVO: Guardar la evidencia en Firestore para que la vea el Admin
+            // Creamos un objeto mapa simple para enviar a Firebase
+            val datosEvidencia = hashMapOf(
+                "id" to nuevoId,
+                "retoId" to retoId,
+                "usuarioId" to usuarioId,
+                "fotoUrl" to fotoUrl,
+                "estado" to "pendiente", // Para que el admin lo revise
+                "tituloReto" to reto.titulo, // Útil para que el admin sepa qué reto es
+                "fecha" to tiempoActual,
+                "puntos" to reto.puntos
+            )
+
             firestore.runTransaction { transaction ->
+                // A. Actualizamos puntos del usuario
                 val snapshot = transaction.get(userDoc)
                 val puntosActuales = snapshot.getLong("puntos") ?: 0
                 transaction.update(userDoc, "puntos", puntosActuales + reto.puntos)
+
+                // B. Guardamos el documento de evidencia en una colección nueva
+                val evidenciaDoc = firestore.collection("retos_completados").document(nuevoId)
+                transaction.set(evidenciaDoc, datosEvidencia)
             }.await()
+
+            // 4. Actualizar Puntos Localmente
+            usuarioDao.agregarPuntos(usuarioId, reto.puntos)
 
             Resource.Success(Unit)
         } catch (e: Exception) {

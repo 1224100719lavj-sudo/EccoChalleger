@@ -23,6 +23,9 @@ foundation = "1.7.5"      # Ajustado para coincidir mejor con el BOM
 # pero dejamos una válida por si acaso.
 firebaseFirestoreKtx = "25.1.1"
 
+coil = "2.7.0"
+foundationVersion = "1.9.5"
+
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -43,6 +46,8 @@ androidx-compose-foundation = { group = "androidx.compose.foundation", name = "f
 # Nota: Esta librería se puede borrar si usas el BOM en build.gradle, pero dejarla no afecta
 firebase-firestore-ktx = { group = "com.google.firebase", name = "firebase-firestore-ktx", version.ref = "firebaseFirestoreKtx" }
 
+coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
+androidx-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "foundationVersion" } # <--- AGREGA ESTO (NUEVO)
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }

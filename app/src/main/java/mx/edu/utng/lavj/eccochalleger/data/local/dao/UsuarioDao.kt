@@ -18,9 +18,10 @@ interface UsuarioDao {
     @Update
     suspend fun updateUsuario(usuario: UsuarioEntity)
 
-    @Query("UPDATE usuarios SET puntos = puntos + :puntos WHERE id = :id")
-    suspend fun agregarPuntos(id: String, puntos: Int)
-
     @Query("DELETE FROM usuarios")
     suspend fun deleteAll()
+
+    // ✅ AGREGA ESTO: Suma los puntos nuevos a los que ya tenía el usuario
+    @Query("UPDATE usuarios SET puntos = puntos + :puntosGanados WHERE id = :usuarioId")
+    suspend fun agregarPuntos(usuarioId: String, puntosGanados: Int)
 }

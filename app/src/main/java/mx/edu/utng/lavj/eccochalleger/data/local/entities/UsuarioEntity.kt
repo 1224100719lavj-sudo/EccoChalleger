@@ -14,5 +14,6 @@ data class UsuarioEntity(
     val fotoUrl: String = "",
     val descripcion: String = "Cuidando el planeta día a día 🌿",
     val fechaRegistro: Long = System.currentTimeMillis(),
-    val esPremium: Boolean = false
+    val esPremium: Boolean = false,
+    val esAdmin: Boolean = false // NUEVO: Para identificar admins
 )

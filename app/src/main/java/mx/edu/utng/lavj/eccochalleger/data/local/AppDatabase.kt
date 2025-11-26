@@ -9,7 +9,14 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import mx.edu.utng.lavj.eccochalleger.data.local.dao.*
-import mx.edu.utng.lavj.eccochalleger.data.local.entities.*
+//import mx.edu.utng.lavj.eccochalleger.data.local.entities.*
+import mx.edu.utng.lavj.eccochalleger.data.local.entities.UsuarioEntity
+import mx.edu.utng.lavj.eccochalleger.data.local.entities.RetoEntity
+import mx.edu.utng.lavj.eccochalleger.data.local.entities.LogroEntity
+import mx.edu.utng.lavj.eccochalleger.data.local.entities.ConsejoEntity
+import mx.edu.utng.lavj.eccochalleger.data.local.entities.LugarEcologicoEntity
+import mx.edu.utng.lavj.eccochalleger.data.local.entities.RankingEntity
+import mx.edu.utng.lavj.eccochalleger.data.local.entities.RetoCompletadoEntity
 
 @Database(
     entities = [
@@ -18,9 +25,10 @@ import mx.edu.utng.lavj.eccochalleger.data.local.entities.*
         LogroEntity::class,
         ConsejoEntity::class,
         LugarEcologicoEntity::class,
-        RankingEntity::class
+        RankingEntity::class,
+        RetoCompletadoEntity::class
     ],
-    version = 1,
+    version = 3, // Incrementamos la versión
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -31,6 +39,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun consejoDao(): ConsejoDao
     abstract fun lugarEcologicoDao(): LugarEcologicoDao
     abstract fun rankingDao(): RankingDao
+    abstract fun retoCompletadoDao(): RetoCompletadoDao
 
     companion object {
         @Volatile
@@ -43,6 +52,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "ecochallenge_database"
                 )
+                    .fallbackToDestructiveMigration() // Recrear BD si hay cambios
                     .addCallback(DatabaseCallback())
                     .build()
                 INSTANCE = instance
@@ -74,7 +84,8 @@ abstract class AppDatabase : RoomDatabase() {
                     descripcion = "Separa y recicla al menos 5 envases de plástico hoy",
                     tipo = "reciclaje",
                     puntos = 10,
-                    iconoNombre = "Recycling"
+                    iconoNombre = "Recycling",
+                    requiereFoto = true
                 ),
                 RetoEntity(
                     id = "reto2",
@@ -82,7 +93,8 @@ abstract class AppDatabase : RoomDatabase() {
                     descripcion = "Evita comprar botellas desechables durante todo el día",
                     tipo = "agua",
                     puntos = 15,
-                    iconoNombre = "LocalDrink"
+                    iconoNombre = "LocalDrink",
+                    requiereFoto = true
                 ),
                 RetoEntity(
                     id = "reto3",
@@ -90,7 +102,8 @@ abstract class AppDatabase : RoomDatabase() {
                     descripcion = "Cierra el grifo mientras te cepillas los dientes",
                     tipo = "agua",
                     puntos = 10,
-                    iconoNombre = "WaterDrop"
+                    iconoNombre = "WaterDrop",
+                    requiereFoto = false // Este NO requiere foto
                 )
             )
             retoDao.insertRetos(retosIniciales)

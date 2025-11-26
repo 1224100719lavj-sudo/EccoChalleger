@@ -73,6 +73,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7")
+    implementation(libs.androidx.foundation)
 
     // Room Database
     val roomVersion = "2.6.1"
@@ -99,4 +100,7 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
+
+    // ✅ COIL: Para cargar fotos y previews
+    implementation(libs.coil.compose)
 }
