@@ -38,7 +38,10 @@ class AuthRepository(
                 fotoUrl = userFirebase.fotoUrl,
                 descripcion = userFirebase.descripcion,
                 fechaRegistro = userFirebase.fechaRegistro,
-                esPremium = userFirebase.esPremium
+                esPremium = userFirebase.esPremium,
+
+                // ✅ AQUÍ ESTABA EL ERROR: Te faltaba pasar este campo
+                esAdmin = userFirebase.esAdmin
             )
             usuarioDao.insertUsuario(userEntity)
 

@@ -1,5 +1,7 @@
 package mx.edu.utng.lavj.eccochalleger.ui.screens.admin
 
+import android.graphics.BitmapFactory
+import android.util.Base64
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -14,12 +16,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import coil.compose.rememberAsyncImagePainter
 import mx.edu.utng.lavj.eccochalleger.data.local.entities.RetoCompletadoEntity
 import mx.edu.utng.lavj.eccochalleger.ui.viewmodel.AdminViewModel
 import mx.edu.utng.lavj.eccochalleger.utils.Resource
@@ -44,6 +46,8 @@ fun RevisarRetosScreen(
             mostrarDialogoRechazar = false
             retoSeleccionado = null
             adminViewModel.resetStates()
+            // Recargamos la lista automáticamente al terminar
+            adminViewModel.sincronizarRetosPendientes()
         }
     }
 
@@ -141,6 +145,45 @@ fun RevisarRetosScreen(
     }
 }
 
+// ✅ NUEVO COMPONENTE: Decodifica el Base64 y muestra la imagen
+@Composable
+fun ImagenBase64(
+    base64Data: String,
+    modifier: Modifier = Modifier,
+    contentScale: ContentScale = ContentScale.Crop
+) {
+    // Usamos remember para no decodificar en cada frame
+    val bitmap = remember(base64Data) {
+        try {
+            // 1. Limpiamos el encabezado si existe
+            val base64Clean = base64Data.substringAfter(",")
+            // 2. Decodificamos
+            val decodedBytes = Base64.decode(base64Clean, Base64.DEFAULT)
+            BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    if (bitmap != null) {
+        Image(
+            bitmap = bitmap.asImageBitmap(),
+            contentDescription = "Evidencia",
+            modifier = modifier,
+            contentScale = contentScale
+        )
+    } else {
+        // Placeholder si falla la carga
+        Box(
+            modifier = modifier,
+            contentAlignment = Alignment.Center
+        ) {
+            Text("Error de imagen", color = Color.Red, fontSize = 10.sp)
+        }
+    }
+}
+
 @Composable
 fun RetoCompletadoCard(
     reto: RetoCompletadoEntity,
@@ -149,6 +192,7 @@ fun RetoCompletadoCard(
 ) {
     var mostrarImagenCompleta by remember { mutableStateOf(false) }
 
+    // Dialogo de pantalla completa para ver la foto
     if (mostrarImagenCompleta) {
         Dialog(onDismissRequest = { mostrarImagenCompleta = false }) {
             Card(
@@ -156,14 +200,16 @@ fun RetoCompletadoCard(
                 shape = RoundedCornerShape(16.dp)
             ) {
                 Column {
-                    Image(
-                        painter = rememberAsyncImagePainter(reto.fotoUrl),
-                        contentDescription = "Foto del reto",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(max = 500.dp),
-                        contentScale = ContentScale.Fit
-                    )
+                    // ✅ USAMOS EL COMPONENTE DE BASE64
+                    if (reto.fotoUrl.isNotEmpty()) {
+                        ImagenBase64(
+                            base64Data = reto.fotoUrl,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 300.dp, max = 500.dp),
+                            contentScale = ContentScale.Fit
+                        )
+                    }
                     TextButton(
                         onClick = { mostrarImagenCompleta = false },
                         modifier = Modifier.align(Alignment.End)
@@ -217,18 +263,22 @@ fun RetoCompletadoCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Foto del reto
+            // ✅ USAMOS EL COMPONENTE DE BASE64 AQUÍ TAMBIÉN
             if (reto.fotoUrl.isNotEmpty()) {
-                Image(
-                    painter = rememberAsyncImagePainter(reto.fotoUrl),
-                    contentDescription = "Evidencia del reto",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .clickable { mostrarImagenCompleta = true },
-                    contentScale = ContentScale.Crop
-                )
+                Box(modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable { mostrarImagenCompleta = true }
+                ) {
+                    ImagenBase64(
+                        base64Data = reto.fotoUrl,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+            } else {
+                Text("Sin evidencia adjunta", color = Color.Gray, fontSize = 12.sp)
                 Spacer(modifier = Modifier.height(12.dp))
             }
 
@@ -265,6 +315,7 @@ fun RetoCompletadoCard(
     }
 }
 
+// ... Tus Dialogos (Aprobar/Rechazar) y formatearFecha los dejé igual porque están bien ...
 @Composable
 fun DialogoAprobarReto(
     reto: RetoCompletadoEntity,
